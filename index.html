@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AWS 網路基礎互動筆記</title>
+  <style>
+    :root { --navy:#102A43; --blue:#1677C8; --sky:#EAF4FB; --ink:#1F2933; --muted:#627D98; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); font-family:"Microsoft JhengHei", Arial, sans-serif; background:#F7FAFC; }
+    header { padding:56px max(24px, calc((100% - 1040px)/2)); color:white; background:linear-gradient(120deg,#102A43,#1677C8); }
+    h1 { margin:0 0 12px; font-size:clamp(32px,5vw,52px); }
+    header p { margin:0; font-size:18px; opacity:.9; }
+    main { max-width:1040px; margin:0 auto; padding:36px 24px 64px; }
+    section { margin:26px 0; padding:28px; background:white; border-left:6px solid var(--blue); box-shadow:0 4px 18px rgba(16,42,67,.08); }
+    h2 { margin:0 0 14px; color:var(--navy); font-size:28px; }
+    p, li { line-height:1.75; font-size:17px; }
+    code { padding:2px 6px; color:#075985; background:#E0F2FE; border-radius:4px; font-family:Consolas, monospace; }
+    .example { margin-top:16px; padding:18px; background:var(--sky); border-radius:8px; }
+    .parts { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin-top:18px; }
+    .part { padding:14px; border:1px solid #B8D8EE; background:#F8FCFF; border-radius:8px; }
+    .part strong { display:block; color:#075985; margin-bottom:5px; }
+    label { display:block; margin:15px 0 7px; font-weight:700; color:var(--navy); }
+    input { width:100%; padding:12px; border:1px solid #9FB3C8; border-radius:6px; font:16px Consolas, monospace; }
+    button { margin-top:14px; padding:11px 18px; color:white; border:0; border-radius:6px; background:var(--blue); font-size:16px; cursor:pointer; }
+    #result { display:none; margin-top:16px; padding:16px; border-radius:6px; background:#EDFDF3; line-height:1.8; }
+    footer { text-align:center; color:var(--muted); padding:24px; }
+  </style>
+</head>
+<body>
+  <header><h1>AWS 網路基礎</h1><p>作業第六題：可開啟的前端網頁檔案</p></header>
+  <main>
+    <section>
+      <h2>HTTPS、HTTP 與 Port</h2>
+      <ul>
+        <li><strong>HTTP</strong>：瀏覽器與伺服器交換網頁資料的協定，預設連接埠為 <code>80</code>。</li>
+        <li><strong>HTTPS</strong>：HTTP 加上 TLS 加密，可驗證網站身分並保護傳輸內容，預設連接埠為 <code>443</code>。</li>
+        <li><strong>Port</strong>：一台主機內用來辨識服務的號碼，例如 SSH 為 <code>22</code>、HTTP 為 <code>80</code>。</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Security Group：Inbound 與 Outbound</h2>
+      <p><strong>Inbound</strong> 控制哪些來源可進入資源；<strong>Outbound</strong> 控制資源可連往哪些目的地。設定規則時要指定協定、連接埠、來源或目的地。</p>
+      <div class="example"><strong>Web 伺服器範例：</strong>Inbound 允許 TCP 443，來源為 <code>0.0.0.0/0</code>；SSH 22 僅允許管理者的固定 IP。Outbound 可保留預設全部允許，或依需求只開放必要目的地。</div>
+    </section>
+    <section>
+      <h2>CIDR</h2>
+      <p>CIDR 使用「網路位址/前綴長度」表示 IP 範圍。<code>10.0.0.0/24</code> 的 <code>/24</code> 表示前 24 個位元為網路部分，範圍是 10.0.0.0 到 10.0.0.255，共 256 個位址。</p>
+    </section>
+    <section>
+      <h2>DNS、IP、網域與 URL</h2>
+      <ul>
+        <li><strong>IP</strong>：網路上的數字位址，例如 <code>203.0.113.10</code>。</li>
+        <li><strong>網域名稱</strong>：人類容易記憶的名稱，例如 <code>nccu.edu.tw</code>。</li>
+        <li><strong>DNS</strong>：將網域名稱查詢成 IP 位址的系統。</li>
+        <li><strong>URL</strong>：資源在網路上的完整位置，包含協定、主機與路徑等資訊。</li>
+      </ul>
+    </section>
+    <section>
+      <h2>URL 拆解工具</h2>
+      <p>輸入網址後，網頁會將協定、主機、連接埠、路徑與查詢字串拆開說明。</p>
+      <label for="url">URL</label>
+      <input id="url" value="https://www.nccu.edu.tw:1234/class/upload.php?file=abc">
+      <button type="button" onclick="parseUrl()">分析 URL</button>
+      <div id="result"></div>
+    </section>
+  </main>
+  <footer>課堂作業示範網頁</footer>
+  <script>
+    function parseUrl() {
+      const box = document.getElementById('result');
+      try {
+        const u = new URL(document.getElementById('url').value);
+        const entries = [...u.searchParams.entries()].map(([k,v]) => `${k} = ${v}`).join('<br>') || '沒有查詢參數';
+        box.innerHTML = `<strong>分析結果</strong><br>協定：<code>${u.protocol}</code><br>網域名稱：<code>${u.hostname}</code><br>Port：<code>${u.port || '未指定，採用預設值'}</code><br>路徑：<code>${u.pathname}</code><br>查詢參數：${entries}`;
+        box.style.display = 'block';
+      } catch { box.textContent = '請輸入有效的完整 URL，例如 https://example.com/path?x=1'; box.style.display = 'block'; }
+    }
+  </script>
+</body>
+</html>
